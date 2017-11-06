@@ -1,34 +1,32 @@
-with open("Flickr8k.token.txt") as textFile:
-    lines = [line.split('\t') for line in textFile]
-    
-class img():
-    def __init__(self, name, cap):
-        self.name = name
-        self.cap = cap
-
 import string
 from sets import Set
 from collections import Counter
 import pickle
 
-images = []
-maxl = 0
+# Variables to set / change
+dataset_directory = 'data/flicker8k'
+token_file_name = 'Flickr8k.token.txt'
 
+# Read tokens file
+with open(dataset_directory + '/' + token_file_name) as textFile:
+	lines = [line.split('\t') for line in textFile]
+
+max_length = 0
 vocab = []
-        
+
+# Build vocabulary
 for line in lines:
-    fname = line[0].split("#")[0]
-    caption = line[1].split("\n")[0].split(".")[0]
-    caption = caption.translate(None, string.punctuation).lower()
-    caption = caption.split(" ")  
-    caption.append("<end>")    
-    caption = ["<start>"] + caption
-    caption = list(filter(lambda a: a != "", caption))
-    vocab.extend(caption)
-    maxl = max(maxl, len(caption))
-    i = img(fname, caption)
-    images.append(i)
-    
+	filename = line[0].split("#")[0]
+	caption = line[1].split("\n")[0].split(".")[0]
+	caption = caption.translate(None, string.punctuation).lower()
+	caption = caption.split(" ")  
+	caption.append("<end>")    
+	caption = ["<start>"] + caption
+	caption = list(filter(lambda a: a != "", caption))
+	vocab.extend(caption)
+	max_length = max(max_length, len(caption))
+
+# Save map between tokens to IDs and vice versa
 vocab = Counter(vocab)
 keys = vocab.keys()
 
@@ -38,16 +36,16 @@ id_to_token = {pos:key for pos, key in enumerate(keys)}
 pickle.dump(token_to_id, open('token_to_id.p', 'wb') )
 pickle.dump(id_to_token, open('id_to_token.p', 'wb') )
 
-f = open("train_captions.txt", 'w')
-for line in lines:
-    fname = line[0].split("#")[0]
-    caption = line[1].split("\n")[0].split(".")[0]
-    caption = caption.translate(None, string.punctuation).lower()
-    caption = caption.split(" ")  
-    caption.append("<end>")    
-    caption = ["<start>"] + caption
-    caption = list(filter(lambda a: a != "", caption))
-    num_caption = map(lambda a: str(token_to_id[a]), caption)
-    f.write('%'.join([fname]+num_caption))
-    f.write('\n')
-f.close()
+# Generate captions that will be used for training and testing
+with open(dataset_directory + '/train_captions.txt', 'w') as f:
+	for line in lines:
+		filename = line[0].split("#")[0]
+		caption = line[1].split("\n")[0].split(".")[0]
+		caption = caption.translate(None, string.punctuation).lower()
+		caption = caption.split(" ")  
+		caption.append("<end>")    
+		caption = ["<start>"] + caption
+		caption = list(filter(lambda a: a != "", caption))
+		num_caption = map(lambda a: str(token_to_id[a]), caption)
+		f.write('%'.join([filename] + num_caption))
+		f.write('\n')

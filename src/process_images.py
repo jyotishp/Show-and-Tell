@@ -107,7 +107,7 @@ def save_image_features(dataset_directory = 'data/flicker8k', img_list_file = 'F
 	
 	# Save CNN features
 	preprocessed_data_directory = dataset_directory + '/preprocessed'
-	cnn_features_filepath = preprocessed_data_directory + '/cnn_features'
+	cnn_features_filepath = preprocessed_data_directory + '/cnn_features.h5'
 	
 	# Create preprocessed folder to save preprocessed files
 	if not os.path.exists(preprocessed_data_directory):
