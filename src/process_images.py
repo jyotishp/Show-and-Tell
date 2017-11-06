@@ -28,6 +28,7 @@ def build_image_features(image_filenames, dataset_directory, cnn = 'inception'):
 	if cnn == 'inception':
 		# Import InceptionV3 modules
 		from keras.applications.inception_v3 import InceptionV3
+		from keras.applications.inception_v3 import preprocess_input
 
 		base_model = InceptionV3(weights = 'imagenet', include_top = True)
 		model =  Model(
@@ -77,7 +78,7 @@ def build_image_features(image_filenames, dataset_directory, cnn = 'inception'):
 		img = image.load_img(img_filepath, target_size = target_size)
 		img = image.img_to_array(img)
 		img = np.expand_dims(img, axis=0)
-		img = preprocess_input(img) if cnn == 'vgg16' else img
+		img = preprocess_input(img)
 
 		# Display the number of files processed			
 		if img_id % 100 is 0:
