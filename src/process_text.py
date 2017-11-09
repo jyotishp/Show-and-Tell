@@ -4,7 +4,7 @@ from collections import Counter
 import pickle
 
 # Variables to set / change
-dataset_directory = 'data/flicker8k'
+dataset_directory = '/scratch/jyotish/Show-and-Tell/data/flicker8k'
 token_file_name = 'Flickr8k.token.txt'
 
 # Read tokens file
@@ -33,11 +33,11 @@ keys = vocab.keys()
 token_to_id = {key:pos for pos, key in enumerate(keys)}
 id_to_token = {pos:key for pos, key in enumerate(keys)}    
 
-pickle.dump(token_to_id, open('token_to_id.p', 'wb') )
-pickle.dump(id_to_token, open('id_to_token.p', 'wb') )
+pickle.dump(token_to_id, open(dataset_directory + '/preprocessed/token_to_id.p', 'wb') )
+pickle.dump(id_to_token, open(dataset_directory + '/preprocessed/id_to_token.p', 'wb') )
 
 # Generate captions that will be used for training and testing
-with open(dataset_directory + '/train_captions.txt', 'w') as f:
+with open(dataset_directory + '/preprocessed/train_captions.txt', 'w') as f:
 	for line in lines:
 		filename = line[0].split("#")[0]
 		caption = line[1].split("\n")[0].split(".")[0]

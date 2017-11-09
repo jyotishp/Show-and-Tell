@@ -55,7 +55,7 @@ def build_image_features(image_filenames, dataset_directory, cnn = 'inception'):
 
 	preprocessed_images = []
 	# Remove repeating filenames (if any)
-	image_filenames = list(set(image_filenames))
+	# image_filenames = list(set(image_filenames))
 	number_of_images = len(image_filenames)
 	img_input = []
 	
@@ -90,7 +90,7 @@ def build_image_features(image_filenames, dataset_directory, cnn = 'inception'):
 # Build and save features for all images and save it in cnn_features.h5
 # dataset_directory = path to flicker8k dir containing the *.txt files
 # img_list_file = File containing list of image filenames
-def save_image_features(dataset_directory = 'data/flicker8k', img_list_file = 'Flickr_8k.trainImages.txt'):
+def save_image_features(dataset_directory = '../data/flicker8k', img_list_file = 'Flickr_8k.trainImages.txt', save_name = 'cnn_features.h5'):
 	# Get image filenames
 	image_filenames = get_image_filenames(dataset_directory + '/' + img_list_file)
 	
@@ -108,7 +108,7 @@ def save_image_features(dataset_directory = 'data/flicker8k', img_list_file = 'F
 	
 	# Save CNN features
 	preprocessed_data_directory = dataset_directory + '/preprocessed'
-	cnn_features_filepath = preprocessed_data_directory + '/cnn_features.h5'
+	cnn_features_filepath = preprocessed_data_directory + '/' + save_name
 	
 	# Create preprocessed folder to save preprocessed files
 	if not os.path.exists(preprocessed_data_directory):
@@ -128,6 +128,4 @@ def save_image_features(dataset_directory = 'data/flicker8k', img_list_file = 'F
 	dataset_file.close()
 	
 if __name__ == "__main__":
-	save_image_features(
-			dataset_directory = '/home/shanmukh.alle/flickr8k',
-			img_list_file = 'all_images.txt')
+	save_image_features(dataset_directory = '/scratch/jyotish/Show-and-Tell/data/flicker8k')
