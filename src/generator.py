@@ -38,7 +38,7 @@ class Generator():
 	
 	def get_one_hots(self,caption):
 		caption_onehot = np.zeros((self.max_token_len, self.vocab_size))
-		tokenized_caption = np.zeros(self.max_token_len)
+		tokenized_caption = np.full(self.max_token_len, self.token_to_id['<end>'])
 		for pos,token_id in enumerate(caption):
 			tokenized_caption[pos] = int(token_id)
 			caption_onehot[pos][int(token_id)] = 1
