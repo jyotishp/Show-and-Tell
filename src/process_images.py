@@ -24,7 +24,7 @@ def get_image_filenames(filename):
 	return filter(None, image_filenames)
 
 # Choose a CNN between InceptionV3 and VGG16 and generate image features
-def build_image_features(image_filenames, dataset_directory, cnn = 'inception'):
+def build_image_features(image_filenames, dataset_directory, cnn = 'inception', verbose = True):
 	if cnn == 'inception':
 		# Import InceptionV3 modules
 		from keras.applications.inception_v3 import InceptionV3
@@ -60,16 +60,17 @@ def build_image_features(image_filenames, dataset_directory, cnn = 'inception'):
 	img_input = []
 	
 	# Display bar for preprocessing
-	print('Preprocessing images:')
-	bar = progressbar.ProgressBar(
-			term_width = 56,
-			max_value = number_of_images,
-			widgets = [
-				progressbar.Counter(format='%(value)04d/%(max_value)d'),
-				progressbar.Bar('=', '[', ']', '.'),
-				' ',
-				progressbar.ETA()
-				])
+	if verbose == True:
+		print('Preprocessing images:')
+		bar = progressbar.ProgressBar(
+				term_width = 56,
+				max_value = number_of_images,
+				widgets = [
+					progressbar.Counter(format='%(value)04d/%(max_value)d'),
+					progressbar.Bar('=', '[', ']', '.'),
+					' ',
+					progressbar.ETA()
+					])
 
 	# Iterate over all images and preprocess them
 	for img_id, img_name in enumerate(image_filenames): # For coco make 3D array , do batch
@@ -80,8 +81,8 @@ def build_image_features(image_filenames, dataset_directory, cnn = 'inception'):
 		img = np.expand_dims(img, axis=0)
 		img = preprocess_input(img)
 
-		# Display the number of files processed			
-		if img_id % 100 is 0:
+		# Display the number of files processed
+		if img_id % 100 is 0 and verbose == True:
 			bar.update(img_id + 100)
 
 		preprocessed_images.append(np.squeeze(img))
