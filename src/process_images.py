@@ -9,22 +9,19 @@ import sys
 import os
 import h5py
 import progressbar
+from pycocotools.coco import COCO
+import skimage.io as io
+import matplotlib.pyplot as plt
+import pylab
+pylab.rcParams['figure.figsize'] = (8.0, 10.0)
 
 # Set Tensorflow backend to avoid full GPU pre-loading
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
 set_session(tf.Session(config = config))
 
-# Read the list of images from img_list_file
-def get_image_filenames(filename):
-	with open(filename) as f:
-		image_filenames = f.read().split('\n')
-	# Remove the trailing blank line at the end of the file and return the
-	# list of image filenames
-	return filter(None, image_filenames)
-
-# Choose a CNN between InceptionV3 and VGG16 and generate image features
-def build_image_features(image_filenames, dataset_directory, cnn = 'inception', verbose = True):
+# Load keras built in model for inception or VGG16
+def get_cnn_model(cnn = 'inception'):
 	if cnn == 'inception':
 		# Import InceptionV3 modules
 		from keras.applications.inception_v3 import InceptionV3
@@ -52,63 +49,47 @@ def build_image_features(image_filenames, dataset_directory, cnn = 'inception', 
 	else:
 		print('Unknown CNN architecture.')
 		sys.exit()
+	return model, target_size, output_shape, preprocess_input
 
+# Generate image features
+def build_image_features(img_ids, coco_instance, 
+						 target_size, output_shape,
+						 preprocess_input,
+						 img_list_file, dataset_directory,
+						 progress):
 	preprocessed_images = []
-	# Remove repeating filenames (if any)
-	# image_filenames = list(set(image_filenames))
-	number_of_images = len(image_filenames)
-	img_input = []
-	
-	# Display bar for preprocessing
-	if verbose == True:
-		print('Preprocessing images:')
-		bar = progressbar.ProgressBar(
-				term_width = 56,
-				max_value = number_of_images,
-				widgets = [
-					progressbar.Counter(format='%(value)04d/%(max_value)d'),
-					progressbar.Bar('=', '[', ']', '.'),
-					' ',
-					progressbar.ETA()
-					])
 
 	# Iterate over all images and preprocess them
-	for img_id, img_name in enumerate(image_filenames): # For coco make 3D array , do batch
-		img_filepath = dataset_directory + '/Flickr8k_Dataset/' + img_name
+	for pos, img_id in enumerate(img_ids): # For coco make 3D array , do batch
+		img_data = coco_instance.loadImgs(img_id)
+		img_filepath = dataset_directory + '/'+ img_list_file +'/' + img_data[0]['file_name']
 		# Image preprocessing
 		img = image.load_img(img_filepath, target_size = target_size)
 		img = image.img_to_array(img)
 		img = np.expand_dims(img, axis=0)
 		img = preprocess_input(img)
 
-		# Display the number of files processed
-		if img_id % 100 is 0 and verbose == True:
-			bar.update(img_id + 100)
-
+		# Display intermediate progress
+		if pos % 50 == 0 and len(progress) > 0:
+			progress[0].update(progress[1] * progress[2] + pos)
+		
 		preprocessed_images.append(np.squeeze(img))
-	return model, preprocessed_images, output_shape
+	return preprocessed_images
 
 # Build and save features for all images and save it in cnn_features.h5
-# dataset_directory = path to flicker8k dir containing the *.txt files
-# img_list_file = File containing list of image filenames
-def save_image_features(dataset_directory = '../data/flicker8k', img_list_file = 'Flickr_8k.trainImages.txt', save_name = 'cnn_features.h5'):
+# dataset_directory = path to extracted MS COCO dir containing the *.json files
+# img_list_file = File containing list of training instances
+def save_image_features(dataset_directory = '../data/flicker8k', 
+						img_list_file = 'Flickr_8k.trainImages.txt', 
+						save_name = 'cnn_features.h5',
+						images_per_step = 512, batch_size = 64):
 	# Get image filenames
-	image_filenames = get_image_filenames(dataset_directory + '/' + img_list_file)
-	
-	# Preprocess the images
-	model, preprocessed_images, output_shape = build_image_features(
-			image_filenames = image_filenames,
-			dataset_directory = dataset_directory)
-	print('\nPreprocessing done!\n')
-
-	preprocessed_images = np.asarray(preprocessed_images)
-	
-	# Build CNN features
-	print('Generating features:')
-	cnn_features = model.predict(preprocessed_images, batch_size = 128, verbose = 1)
+	annotations_instance_file = '{}/annotations/instances_{}.json'.format(dataset_directory, img_list_file)
+	coco = COCO(annotations_instance_file)
+	img_ids = coco.getImgIds()
 	
 	# Save CNN features
-	preprocessed_data_directory = dataset_directory + '/preprocessed'
+	preprocessed_data_directory = dataset_directory + '/../preprocessed'
 	cnn_features_filepath = preprocessed_data_directory + '/' + save_name
 	
 	# Create preprocessed folder to save preprocessed files
@@ -116,17 +97,55 @@ def save_image_features(dataset_directory = '../data/flicker8k', img_list_file =
 		os.mkdir(preprocessed_data_directory)
 
 	# Remove existing features file
-	# IDK it throws error if I don't do this :(
 	if os.path.exists(cnn_features_filepath):
 		os.remove(cnn_features_filepath)
 
-	dataset_file = h5py.File(cnn_features_filepath)
-	print('Now saving the CNN features at', cnn_features_filepath)
+	print('Building CNN model')
+	model, target_size, output_shape, preprocess_input = get_cnn_model()
 
-	for img_id, img_name in enumerate(image_filenames):
-		group = dataset_file.create_group(img_name)
-		group.create_dataset('cnn_features', output_shape, dtype = 'float32', data = cnn_features[img_id])
-	dataset_file.close()
+	# Display bar for preprocessing
+	print('Preprocessing images:')
+	bar = progressbar.ProgressBar(
+		term_width = 56,
+			max_value = len(img_ids),
+			widgets = [
+				progressbar.Counter(format='%(value)05d/%(max_value)d'),
+				' ',
+				progressbar.Bar('=', '[', ']', '.'),
+				' ',
+				progressbar.ETA()
+				])
 	
+	dataset_file = h5py.File(cnn_features_filepath)
+	for i in range((len(img_ids) / images_per_step) + 1):
+		# Preprocess the images
+		if (i+1)*images_per_step < len(img_ids):
+			 current_img_ids = img_ids[i*images_per_step : (i+1)*images_per_step]
+		else:
+			current_img_ids = img_ids[i*images_per_step:]
+
+		preprocessed_images = build_image_features(
+				current_img_ids,
+				coco,
+				target_size,
+				output_shape,
+				preprocess_input,
+				img_list_file,
+				dataset_directory,
+				[bar, i, images_per_step])
+		preprocessed_images = np.asarray(preprocessed_images)
+	
+		# Build CNN features
+		cnn_features = model.predict(preprocessed_images, batch_size = batch_size, verbose = 1)
+		for pos, img_id in enumerate(current_img_ids):
+			group = dataset_file.create_group(str(img_id))
+			group.create_dataset('cnn_features', output_shape, dtype = 'float32', data = cnn_features[pos])
+			
+	dataset_file.close()
+
 if __name__ == "__main__":
-	save_image_features(dataset_directory = '/scratch/jyotish/Show-and-Tell/data/flicker8k')
+	save_image_features(
+		dataset_directory = '/scratch/jyotish/show_and_tell_coco/data/COCO/extracted',
+		img_list_file = 'train2014',
+		images_per_step = 4096,
+		batch_size = 128)
