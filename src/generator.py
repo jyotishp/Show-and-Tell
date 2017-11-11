@@ -6,13 +6,13 @@ import numpy as np
 import random
 
 class Generator():
-	def __init__(self, batch_size = 64, max_token_len = 39, 
+	def __init__(self, batch_size = 64, max_token_len = 51, 
 				cnn_model = 'inception', embedding_size = 512, 
 				feature_filename = 'cnn_features.h5',
 				dataset_directory = '../data'):
 		self.dataset_directory = dataset_directory
-		self.flickr_directory = self.dataset_directory + '/flicker8k'
-		self.preprocessed_directory = self.dataset_directory + '/flicker8k/preprocessed'
+		self.flickr_directory = self.dataset_directory + '/COCO'
+		self.preprocessed_directory = self.dataset_directory + '/COCO/preprocessed'
 		self.token_to_id = pickle.load(open(self.preprocessed_directory + '/token_to_id.p', 'rb'))
 		self.id_to_token = pickle.load(open(self.preprocessed_directory + '/id_to_token.p', 'rb'))
 		self.batch_size = batch_size
@@ -27,7 +27,7 @@ class Generator():
 			sys.exit()
 		self.feature_dataset = h5py.File(self.preprocessed_directory + '/' + feature_filename, 'r')
 		# This bad. It should not be hard coded!
-		self.training_samples_count = 40455
+		self.training_samples_count = 414113
 		self.embedding_size = embedding_size
 	
 	def make_empty_batch(self):
@@ -38,7 +38,7 @@ class Generator():
 	
 	def get_one_hots(self,caption):
 		caption_onehot = np.zeros((self.max_token_len, self.vocab_size))
-		tokenized_caption = np.full(self.max_token_len, self.token_to_id['<end>'])
+		tokenized_caption = np.zeros(self.max_token_len)
 		for pos,token_id in enumerate(caption):
 			tokenized_caption[pos] = int(token_id)
 			caption_onehot[pos][int(token_id)] = 1
