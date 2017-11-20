@@ -73,21 +73,22 @@ model = get_model(gen.img_feature_size, gen.vocab_size, gen.max_token_len, gen.e
 # Load previously saved model if necessary
 from keras.models import load_model
 
-model.load_weights('/scratch/jyotish/show_and_tell_coco/data/COCO/models/initial_1_sat_epoch_1.h5')
+model.load_weights('/scratch/jyotish/show_and_tell_coco/data/COCO/models/initial_pad_sat_epoch_11.h5')
 
 batch_size = gen.batch_size
 print "Start training"
-checkpointer = ModelCheckpoint(filepath='/scratch/jyotish/show_and_tell_coco/data/COCO/models/initial_sat_{epoch:02d}_{val_loss:.2f}', 
-							   verbose = 1,
-							   monitor = 'loss',
-							   period = 1,
-							   mode = 'min',
-							   save_best_only = True)
-model.fit_generator(
+prev_loss = 10
+
+for i in range(11, 51):
+	hist = model.fit_generator(
 				gen.pullData(),
 				epochs=10,
 				steps_per_epoch=int(gen.training_samples_count / batch_size), 
-				shuffle = True, verbose = 1, callbacks = [checkpointer]
-			   )
+				shuffle = True, verbose = 1#, callbacks = [checkpointer]
+				)
+	if hist.history['loss'][-1] < prev_loss:
+		prev_loss = hist.history['loss'][-1]
+		print 'Saving ~COCO/models/initial_sat_epoch_' + str(i*10) + '.h5'
+		model.save('/scratch/jyotish/show_and_tell_coco/data/COCO/models/initial_pad_sat_epoch_' + str(i*10) + '.h5')
 
-model.save('/scratch/jyotish/show_and_tell_coco/data/COCO/models/initial_1_sat_final.h5')
+model.save('/scratch/jyotish/show_and_tell_coco/data/COCO/models/initial_pad_sat_final.h5')

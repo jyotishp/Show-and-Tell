@@ -39,9 +39,12 @@ class Generator():
 	def get_one_hots(self,caption):
 		caption_onehot = np.zeros((self.max_token_len, self.vocab_size))
 		tokenized_caption = np.zeros(self.max_token_len)
+		pos = 0
 		for pos,token_id in enumerate(caption):
 			tokenized_caption[pos] = int(token_id)
 			caption_onehot[pos][int(token_id)] = 1
+		for i in range(pos + 1, self.max_token_len):
+			caption_onehot[i][0] = 1
 		target_onehot = np.zeros_like(caption_onehot)
 		target_onehot[:-1,:] = caption_onehot[1:, ] 
 		return tokenized_caption, target_onehot
