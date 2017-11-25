@@ -60,7 +60,7 @@ def get_model_no_atenttion(cnn_feature_size, vocab_size, max_token_len, embeddin
 	return model
 
 def get_model_with_attention(cnn_feature_size, vocab_size, max_token_len, embedding_dim = 512):
-	
+
 	#model here
 	cnn_X=cnn_feature_size[0]
 	cnn_Y=cnn_feature_size[1]
@@ -84,14 +84,15 @@ def get_model_with_attention(cnn_feature_size, vocab_size, max_token_len, embedd
 	att_inp = (Reshape((max_token_len,filters,cnn_X*cnn_Y)))(att_inp)
 
 	mult=multiply([img_inp.output,att_inp], name='')
-	mult=Permute((1,3,2),input_shape=(39,768,144))(mult)
-	z=TimeDistributed(AveragePooling1D(pool_size=144))(mult)
+	mult=Permute((1,3,2),input_shape=(max_token_len,filters,cnn_X*cnn_Y))(mult)
+	z=TimeDistributed(AveragePooling1D(pool_size=cnn_X*cnn_Y))(mult)
 	z=TimeDistributed(BatchNormalization())(z)
 	z=Reshape((max_token_len,filters))(z)
 
 	lstm_in = concatenate([z, emd_word.output])
 	lstm_out = LSTM(1536,return_sequences=True,dropout=0.5)(lstm_in)
 	lstm_out = TimeDistributed(Dense(vocab_size,activation='softmax'))(lstm_out)
-	#Model is a block that takes in attention, image features and the word predictions and generates input for the last dense layer and attention feedback. 
-	model = Model(inputs=[emd_word.input, img_inp.input, att_inp.input],outputs=lstm_out)
+
+	model = Model(inputs=[img_inp.input,emd_word.input],outputs=lstm_out)
+
 	return model
