@@ -77,6 +77,7 @@ def get_model_with_attention(cnn_feature_size, vocab_size, max_token_len, embedd
 	img_inp.add(TimeDistributed(Reshape((cnn_X*cnn_Y,filters))))
 	img = TimeDistributed(Flatten())(img_inp.output)
 	img = TimeDistributed(Dense(embedding_dim))(img)
+	img = TimeDistributed(Dropout(0.3))(img)
 
 	datain = concatenate([emd_word.output,img])   
 	att_inp = LSTM(embedding_dim,return_sequences=True,dropout=0.5, name='attention_LSTM')(datain)
@@ -90,6 +91,7 @@ def get_model_with_attention(cnn_feature_size, vocab_size, max_token_len, embedd
 	z=TimeDistributed(BatchNormalization())(z)
 	z=TimeDistributed(Reshape((filters,)))(z)
 	z=TimeDistributed(Dense(embedding_dim*2))(z)
+	z=TimeDistributed(Dropout(0.3))(z)
 
 	lstm_in = concatenate([z, emd_word.output])
 	lstm_out = LSTM(1536,return_sequences=True,dropout=0.5)(lstm_in)
