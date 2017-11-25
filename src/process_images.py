@@ -32,7 +32,7 @@ def get_cnn_model(cnn = 'inception'):
 				input = base_model.input,
 				outputs = [base_model.get_layer('avg_pool').output])
 		target_size = (299, 299)
-		output_shape = (2048,)
+		output_shape = model.output_shape
 
 	elif cnn == 'vgg16':
 		# Import VGG16 modules
@@ -42,9 +42,9 @@ def get_cnn_model(cnn = 'inception'):
 		base_model = VGG16(weights = 'imagenet', include_top = True)
 		model = Model(
 				input = base_model.input,
-				outputs = [base_model.get_layer('fc2').output])
+				outputs = [base_model.get_layer('block5_conv3').output])
 		target_size = (224, 224)
-		output_shape = (4096,)
+		output_shape = model.output_shape[1:]
 
 	else:
 		print('Unknown CNN architecture.')
@@ -101,7 +101,8 @@ def save_image_features(dataset_directory = '../data/flicker8k',
 		os.remove(cnn_features_filepath)
 
 	print('Building CNN model')
-	model, target_size, output_shape, preprocess_input = get_cnn_model()
+	model, target_size, output_shape, preprocess_input = get_cnn_model('vgg16')
+	print("Output shape:", output_shape)
 
 	# Display bar for preprocessing
 	print('Preprocessing images:')

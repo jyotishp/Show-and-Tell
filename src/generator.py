@@ -21,7 +21,7 @@ class Generator():
 		if cnn_model == 'inception':
 			self.img_feature_size = (2048)
 		elif cnn_model == 'vgg16':
-			self.img_feature_size = (4096)
+			self.img_feature_size = (14, 14, 512)
 		else:
 			print 'Unknown CNN architecture'
 			sys.exit()
@@ -33,7 +33,7 @@ class Generator():
 	def make_empty_batch(self):
 		captions_batch = np.zeros((self.batch_size, self.max_token_len))
 		targets_batch = np.zeros((self.batch_size, self.max_token_len, self.vocab_size ))
-		images_batch = np.zeros((self.batch_size, self.img_feature_size ))
+		images_batch = np.zeros((self.batch_size, self.img_feature_size[0], self.img_feature_size[1], self.img_feature_size[2] ))
 		return captions_batch, images_batch, targets_batch
 	
 	def get_one_hots(self,caption):
@@ -51,7 +51,7 @@ class Generator():
 
 	def get_img_features(self, img_name):
 		img_features = self.feature_dataset[img_name]['cnn_features'][:]
-		img_input = np.zeros((1, self.img_feature_size ))
+		img_input = np.zeros((1, self.img_feature_size[0], self.img_feature_size[1], self.img_feature_size[2]))
 		img_input[0, :] = img_features
 		return img_input
 	
@@ -73,10 +73,10 @@ class Generator():
 					continue
 				bc = bc + 1
 				if(bc == self.batch_size):
-					zero_input = np.zeros((self.batch_size, self.embedding_size))
+					zero_input = np.full((self.batch_size, self.img_feature_size[0] * self.img_feature_size[1]), 1)
 					# IDK why it doesn't work :(
 # 					yield [{'text_input': captions_batch, 'image_input': images_batch, 'zero': zero_input}, {'output': targets_batch}]
-					yield [[images_batch, zero_input, captions_batch], [targets_batch]] 
+					yield [[images_batch, captions_batch, zero_input], [targets_batch]] 
 					bc = 0
 					captions_batch, images_batch, targets_batch = self.make_empty_batch()
 		f.close()

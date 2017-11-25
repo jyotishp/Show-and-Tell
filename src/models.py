@@ -3,7 +3,7 @@ from keras.backend.tensorflow_backend import set_session
 from keras import backend as K
 from keras.layers import LSTM
 from keras.models import Sequential, Model
-from keras.layers import Dense, Activation,Input, Add, Masking, Embedding, RepeatVector, BatchNormalization, concatenate, Dropout, TimeDistributed, InputLayer
+from keras.layers import *
 from keras.optimizers import RMSprop
 from keras.regularizers import l2
 from generator import Generator
@@ -92,7 +92,6 @@ def get_model_with_attention(cnn_feature_size, vocab_size, max_token_len, embedd
 	lstm_in = concatenate([z, emd_word.output])
 	lstm_out = LSTM(1536,return_sequences=True,dropout=0.5)(lstm_in)
 	lstm_out = TimeDistributed(Dense(vocab_size,activation='softmax'))(lstm_out)
-
-	model = Model(inputs=[img_inp.input,emd_word.input],outputs=lstm_out)
-
+	#Model is a block that takes in attention, image features and the word predictions and generates input for the last dense layer and attention feedback. 
+	model = Model(inputs=[emd_word.input, img_inp.input, att_inp.input],outputs=lstm_out)
 	return model
