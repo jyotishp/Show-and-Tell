@@ -60,50 +60,39 @@ def get_model_no_atenttion(cnn_feature_size, vocab_size, max_token_len, embeddin
 	return model
 
 def get_model_with_attention(cnn_feature_size, vocab_size, max_token_len, embedding_dim = 512):
+	
 	#model here
 	cnn_X=cnn_feature_size[0]
 	cnn_Y=cnn_feature_size[1]
 	filters=cnn_feature_size[2]
-	
+
 	emd_word=Sequential()
-	emd_word.add(Embedding(vocab_size,embedding_dim,input_length=max_token_len))
+	emd_word.add(Embedding(vocab_size,embedding_dim,input_length=max_token_len, name='word_embedding'))
 	emd_word.add(BatchNormalization())
+	# emd_word.summary()
 
 	img_inp=Sequential()
 	img_inp.add(Flatten(input_shape=(filters,cnn_X*cnn_Y)))
 	img_inp.add(RepeatVector(max_token_len))
 	img_inp.add(Reshape((max_token_len,filters,cnn_X*cnn_Y)))
+	# img_inp.summary()
 
-	att_inp=Sequential()
-	att_inp.add(Flatten(input_shape=(max_token_len,cnn_X*cnn_Y)))
-	att_inp.add(RepeatVector(filters))
-	att_inp.add(Reshape((max_token_len,filters,cnn_X*cnn_Y)))
+	att_inp = LSTM(512,return_sequences=True,dropout=0.5, name='attention_LSTM')(emd_word.output)
+	att_inp = TimeDistributed(Dense(cnn_X*cnn_Y, name='attention_Dense'))(att_inp)
+	att_inp = (Flatten(input_shape=(max_token_len,cnn_X*cnn_Y)))(att_inp)
+	att_inp = (RepeatVector(filters))(att_inp)
+	att_inp = (Reshape((max_token_len,filters,cnn_X*cnn_Y)))(att_inp)
 
-	mult=multiply([img_inp.output,att_inp.output])
-	mult=Permute((1,3,2),input_shape=(max_token_len,filters,cnn_X*cnn_Y))(mult)
-
-	z=TimeDistributed(AveragePooling1D(pool_size=cnn_X*cnn_Y))(mult)
+	mult=multiply([img_inp.output,att_inp], name='')
+	mult=Permute((1,3,2),input_shape=(39,768,144))(mult)
+	z=TimeDistributed(AveragePooling1D(pool_size=144))(mult)
 	z=TimeDistributed(BatchNormalization())(z)
 	z=Reshape((max_token_len,filters))(z)
 
 	lstm_in = concatenate([z, emd_word.output])
 	lstm_out = LSTM(1536,return_sequences=True,dropout=0.5)(lstm_in)
-	#Model is a block that takes in attention, image features and the word predictions and generates input for the last dense layer and attention feedback. 
-	model = Model(inputs=[emd_word.input, img_inp.input, att_inp.input],outputs=lstm_out)
+	lstm_out = TimeDistributed(Dense(vocab_size,activation='softmax'))(lstm_out)
 
+	model = Model(inputs=[img_inp.input,emd_word.input],outputs=lstm_out)
 
-	#Define input dimensions
-	IMG_INP = Input((filters,cnn_X*cnn_Y))
-	WORD_INP = Input((max_token_len,))
-	ones_i=Input((cnn_X*cnn_Y,))
-
-	ones=RepeatVector(max_token_len)(ones_i)
-	LSTM_OUT = model([WORD_INP, IMG_INP,ones ])
-	#Feedback network that generates attention 
-	attend = TimeDistributed(Dense(cnn_X*cnn_Y,activation="softmax"))(LSTM_OUT)
-	LSTM_OUT = model([WORD_INP, IMG_INP, attend])
-	fin = TimeDistributed(Dense(vocab_size, activation="softmax"))(LSTM_OUT) 
-
-	#fin_model is the final model with attention feedback
-	fin_model = Model(inputs=[IMG_INP, WORD_INP, ones_i], outputs=fin)
-	return fin_model
+	return model
