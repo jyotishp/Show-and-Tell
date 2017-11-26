@@ -147,5 +147,6 @@ if __name__ == "__main__":
 	save_image_features(
 		dataset_directory = '/scratch/jyotish/show_and_tell_coco/data/COCO/extracted',
 		img_list_file = 'train2014',
+		save_name = 'cnn_features.h5',
 		images_per_step = 4096,
 		batch_size = 128)
