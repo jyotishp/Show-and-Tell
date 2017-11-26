@@ -27,12 +27,12 @@ def get_cnn_model(cnn = 'inception'):
 		from keras.applications.inception_v3 import InceptionV3
 		from keras.applications.inception_v3 import preprocess_input
 
-		base_model = InceptionV3(weights = 'imagenet', include_top = True)
+		base_model = InceptionV3(weights = 'imagenet', include_top = True, input_shape = (299, 299, 3))
 		model =  Model(
 				input = base_model.input,
-				outputs = [base_model.get_layer('avg_pool').output])
+				outputs = [base_model.get_layer('mixed10').output])
 		target_size = (299, 299)
-		output_shape = model.output_shape
+		output_shape = model.output_shape[1:]
 
 	elif cnn == 'vgg16':
 		# Import VGG16 modules
@@ -101,7 +101,7 @@ def save_image_features(dataset_directory = '../data/flicker8k',
 		os.remove(cnn_features_filepath)
 
 	print('Building CNN model')
-	model, target_size, output_shape, preprocess_input = get_cnn_model('vgg16')
+	model, target_size, output_shape, preprocess_input = get_cnn_model()
 	print("Output shape:", output_shape)
 
 	# Display bar for preprocessing

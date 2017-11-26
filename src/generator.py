@@ -19,7 +19,7 @@ class Generator():
 		self.max_token_len = max_token_len
 		self.vocab_size = len(self.token_to_id.keys())
 		if cnn_model == 'inception':
-			self.img_feature_size = (2048)
+			self.img_feature_size = (8, 8, 2048)
 		elif cnn_model == 'vgg16':
 			self.img_feature_size = (14, 14, 512)
 		else:
@@ -73,10 +73,9 @@ class Generator():
 					continue
 				bc = bc + 1
 				if(bc == self.batch_size):
-					zero_input = np.full((self.batch_size, self.img_feature_size[0] * self.img_feature_size[1]), 1)
 					# IDK why it doesn't work :(
 # 					yield [{'text_input': captions_batch, 'image_input': images_batch, 'zero': zero_input}, {'output': targets_batch}]
-					yield [[images_batch, captions_batch, zero_input], [targets_batch]] 
+					yield [[images_batch, captions_batch], [targets_batch]] 
 					bc = 0
 					captions_batch, images_batch, targets_batch = self.make_empty_batch()
 		f.close()
