@@ -30,12 +30,13 @@ def build_image_features(image_filenames, dataset_directory, cnn = 'inception', 
 		from keras.applications.inception_v3 import InceptionV3
 		from keras.applications.inception_v3 import preprocess_input
 
-		base_model = InceptionV3(weights = 'imagenet', include_top = True)
+		base_model = InceptionV3(weights = 'imagenet', include_top = True, input_shape = (299, 299, 3))
 		model =  Model(
 				input = base_model.input,
-				outputs = [base_model.get_layer('avg_pool').output])
+				outputs = [base_model.get_layer('mixed10').output])
 		target_size = (299, 299)
-		output_shape = (2048,)
+		output_shape = model.output_shape[1:]
+		print(output_shape)
 
 	elif cnn == 'vgg16':
 		# Import VGG16 modules
@@ -45,9 +46,9 @@ def build_image_features(image_filenames, dataset_directory, cnn = 'inception', 
 		base_model = VGG16(weights = 'imagenet', include_top = True)
 		model = Model(
 				input = base_model.input,
-				outputs = [base_model.get_layer('fc2').output])
+				outputs = [base_model.get_layer('block5_conv3').output])
 		target_size = (224, 224)
-		output_shape = (4096,)
+		output_shape = model.output_shape[1:]
 
 	else:
 		print('Unknown CNN architecture.')
@@ -129,4 +130,4 @@ def save_image_features(dataset_directory = '../data/flicker8k', img_list_file =
 	dataset_file.close()
 	
 if __name__ == "__main__":
-	save_image_features(dataset_directory = '/scratch/jyotish/Show-and-Tell/data/flicker8k')
+	save_image_features(dataset_directory = '/home/siddhartha.l/Show-and-Tell/data/flicker8k')

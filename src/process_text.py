@@ -4,7 +4,7 @@ from collections import Counter
 import pickle
 
 # Variables to set / change
-dataset_directory = '/scratch/jyotish/Show-and-Tell/data/flicker8k'
+dataset_directory = '/home/siddhartha.l/Show-and-Tell/data/flicker8k'
 token_file_name = 'Flickr8k.token.txt'
 
 # Read tokens file
