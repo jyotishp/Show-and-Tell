@@ -16,7 +16,6 @@ import os
 def get_model_no_atenttion(cnn_feature_size, vocab_size, max_token_len, embedding_dim = 512):
 	#number of timesteps encoded image vector is shown to the LSTM decoder 
 	visibletime = 1
-	
 	#used to pad the encoded image with zeros for timesteps image vector is not shown to the LSTM decoder
 	dummy_model=Sequential()
 	dummy_model.add(InputLayer(input_shape=(embedding_dim,), name = 'zero'))
