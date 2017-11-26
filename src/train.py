@@ -8,6 +8,7 @@ from keras.optimizers import RMSprop
 from keras.callbacks import ModelCheckpoint
 from keras.regularizers import l2
 from generator import Generator
+from models import *
 import h5py
 import numpy as np
 import sys
@@ -19,67 +20,25 @@ config.gpu_options.allow_growth = True
 tf.global_variables_initializer()
 set_session(tf.Session(config = config))
 
-# Ask Alle for details
-def get_model(cnn_feature_size, vocab_size, max_token_len, embedding_dim = 512):
-	visibletime = 1
-	dummy_model=Sequential()
-	dummy_model.add(InputLayer(input_shape=(embedding_dim,), name = 'zero'))
-	dummy_model.add(RepeatVector(max_token_len - visibletime))
-
-	image_model = Sequential()
-	image_model.add(Dense(embedding_dim, input_dim = (2048), activation='elu', name = 'image'))
-	image_model.add(BatchNormalization())
-	imageout=image_model.output
-	imageout=RepeatVector(visibletime)(imageout)
-
-	b=concatenate([imageout,dummy_model.output],axis=1)
-
-	# b = Lambda(lambda x: backend.concatenate([x,mask],axis=1),output_shape=(max_token_len,cnn_feature_size))(imageout)
-	# image_model.add(RepeatVector(max_token_len))
-
-	lang_model = Sequential()
-# 	lang_model.add(InputLayer(input_shape=(max_token_len), name = 'text'))
-# 	lang_model.add(Masking(mask_value=0))
-	lang_model.add(Embedding(vocab_size, 256, input_length=max_token_len, name = 'text'))
-	lang_model.add(BatchNormalization())
-	# lang_model.add(TimeDistributed(Dense(128)))
-	lang_model.add(LSTM(256,return_sequences=True))
-	lang_model.add(BatchNormalization())
-	lang_model.add(Dropout(0.3))
-	lang_model.add(TimeDistributed(Dense(embedding_dim)))
-	lang_model.add(BatchNormalization())
-
-	intermediate = concatenate([ lang_model.output,b])
-	# intermediate = (Dropout(0.1))(intermediate)
-	intermediate = LSTM(1024,return_sequences=True,dropout=0.5)(intermediate)
-	intermediate = BatchNormalization()(intermediate)
-	# intermediate = (Dropout(0.3))(intermediate)
-	intermediate = LSTM(1536,return_sequences=True,dropout=0.5)(intermediate)
-	intermediate = BatchNormalization()(intermediate)
-	intermediate = (Dropout(0.3))(intermediate)
-	intermediate = TimeDistributed(Dense(vocab_size,activation='softmax', name='output'))(intermediate)
-
-	model=Model(inputs=[image_model.input,dummy_model.input,lang_model.input],outputs=intermediate)
-	# model.summary()
-	model.compile('adamax',loss='categorical_crossentropy',metrics=['accuracy'])
-	return model
-
 print "Loading Generator"
 gen = Generator(dataset_directory = '/scratch/jyotish/show_and_tell_coco/data')
 
 print "Generating model"
-model = get_model(gen.img_feature_size, gen.vocab_size, gen.max_token_len, gen.embedding_size)
-
+model = captioning_model(
+			gen.img_feature_size,
+			gen.embedding_size,
+			gen.max_token_len,
+			gen.vocab_size)
 # Load previously saved model if necessary
-from keras.models import load_model
+# from keras.models import load_model
 
-model.load_weights('/scratch/jyotish/show_and_tell_coco/data/COCO/models/initial_pad_sat_epoch_11.h5')
+# model.load_weights('/scratch/jyotish/show_and_tell_coco/data/COCO/models/initial_pad_sat_epoch_11.h5')
 
 batch_size = gen.batch_size
 print "Start training"
 prev_loss = 10
 
-for i in range(11, 51):
+for i in range(1, 10):
 	hist = model.fit_generator(
 				gen.pullData(),
 				epochs=10,
@@ -89,6 +48,4 @@ for i in range(11, 51):
 	if hist.history['loss'][-1] < prev_loss:
 		prev_loss = hist.history['loss'][-1]
 		print 'Saving ~COCO/models/initial_sat_epoch_' + str(i*10) + '.h5'
-		model.save('/scratch/jyotish/show_and_tell_coco/data/COCO/models/initial_pad_sat_epoch_' + str(i*10) + '.h5')
-
-model.save('/scratch/jyotish/show_and_tell_coco/data/COCO/models/initial_pad_sat_final.h5')
+		model.save('/scratch/jyotish/show_and_tell_coco/data/COCO/models/attention_' + str(i*10) + '.h5')
