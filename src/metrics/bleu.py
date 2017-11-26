@@ -15,12 +15,17 @@ test_results = pickle.load(open('../../data/flicker8k/preprocessed/test_results.
 bleu_score = 0.0
 test_set = []
 reference_set = []
+ref_file = open("reference_set.txt","w")
+test_file = open("test_set.txt","w")
+
 for img_name in test_results:
     ground_truth = test_results[img_name].captions
     result = test_results[img_name].result
     references = []
     hypothesis = result.split()
     for i in ground_truth:
+	ref_file.write(i+"\n")
+	test_file.write(result+"\n")
         references.append(i.split())
     test_set.append(hypothesis)
     reference_set.append(references)

@@ -130,4 +130,5 @@ def save_image_features(dataset_directory = '../data/flicker8k', img_list_file =
 	dataset_file.close()
 	
 if __name__ == "__main__":
-	save_image_features(dataset_directory = '/home/siddhartha.l/Show-and-Tell/data/flicker8k')
+	save_image_features(dataset_directory = '/scratch/jyotish/flickr_attention/data/flicker8k',
+                       img_list_file = 'Flickr_8k.testImages.txt', save_name = 'test_features.h5')
