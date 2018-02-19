@@ -39,8 +39,25 @@ This memory is updated just after seeing a new input, ![xt](https://latex.codeco
 
 ![LSTM equation](https://latex.codecogs.com/svg.latex?o_t=\sigma(W_{ox}x_t+W_{om}m_t-1))
 
-![LSTM equation](https://latex.codecogs.com/svg.latex?c_t=f\odotc_t-1+i_t%20\odot%20h(W_{cx}x_t+W_{cm}m_t-1))
+![LSTM equation](https://latex.codecogs.com/svg.latex?c_t=f%20\odot%20c_{t-1}+i_t%20\odot%20h(W_{cx}x_t+W_{cm}m_t-1))
 
 ![LSTM equation](https://latex.codecogs.com/svg.latex?m_t=o_t%20\odot%20c_t)
 
 ![LSTM equation](https://latex.codecogs.com/svg.latex?p_{t+1}=Softmax(m_t))
+
+Above multiplicative gates make it possible to train the LSTM robustly as these gates deal well with exploding and vanishing gradients. The nonlinearities are sigmoid() and hyperbolic tanh(). The last equation mt is what is used to feed to a Softmax activation layer, which will produce a probability distribution pt over all words in the dictionary.
+
+We chose the LSTM Net over a simple RNN due to its ability to deal with vanishing and exploding gradients. LSTM(Long Short Term Memory) Nets are applied with great success to translation and sequence generation.
+
+# Datasets
+## Flickr8k
+- Publically available dataset
+- The Flickr 8K dataset includes images obtained from the Flickr website.
+- The images do not contain any famous person or place so that the entire image can be learnt based on all the different objects in the image.
+- Train: 6k images, Test: 1k images , Validation: 1k images
+
+## MS COCO
+- Publically available dataset
+- Microsoft’s Common Objects in Context (COCO) dataset does not focus io on iconic images but on detecting non-iconic views or non-canonical perspectives and Contextual reasoning between objects
+- Is the largest dataset of its kind.
+- Train: 82k images, Test: 40k images , Validation: 40k images
